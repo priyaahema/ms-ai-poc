@@ -1,0 +1,8 @@
+env_ai_ms/
+
+# Compiled Python bytecode
+*.py[cod]
+__pycache__/
+
+.vscode/
+.env/

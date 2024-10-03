@@ -1,0 +1,7 @@
+markdown2
+openai==1.30.1
+pandas
+python-dotenv
+pdfkit
+azure-storage-blob
+PyPDF2
