@@ -102,7 +102,9 @@ class ReportPlotter:
         Creates a radar chart comparing various metrics between Low Risk and High Risk groups.
         """
         metrics = ['w_cpu_usage', 'w_memory_usage', 'w_disk_usage', 'w_network_bandwidth', 
-                   'overall_usage_score', 'overall_incident_score', 'maintenance_score']
+                   'overall_usage_score', 'overall_incident_score', 'overall_maintenance_score','overall_vulnerability_score']
+        
+        # metrics = ['overall_usage_score', 'overall_incident_score', 'overall_maintenance_score','overall_vulnerability_score']
 
         if not all(metric in self.df.columns for metric in metrics):
             raise ValueError("DataFrame must contain all specified metrics.")

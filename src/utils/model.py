@@ -48,6 +48,48 @@ class OpenAIModel:
             return response.choices[0].message.content
         else:
             return "No descriptive summary could be generated."
+        
+    def generate_image_description(self, base64_image: str) -> str:
+        """Generate a descriptive summary based on the image data."""
+        response = self.client.chat.completions.create(
+            model=self.deployment_name,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {
+                    "role": "user", 
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are an analytical model designed to provide key insights from charts and graphs. "
+                                    "For each chart or graph provided, please generate eight concise insights. "
+                                    "Focus on trends, patterns, significant data points, comparisons, anomalies, and overall conclusions etc..."
+                                    "Format the response using Markdown with the following structure:\n"
+                                    "\n### Insights\n"
+                                    "1. **Insights names**: <Insights Descriptions with in 2 lines>\n"
+                                    "2. **Insights names**: <Insights Descriptions with in 2 lines>\n"
+                                    "3. **Insights names**: <Insights Descriptions with in 2 lines>\n"
+                                    "4. **Insights names**: <Insights Descriptions with in 2 lines>\n"
+                                    "...\n"
+                                    "8. **Conclusion**: <Overall conclusion>\n"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2500
+        )
+
+        if response.choices:
+            return response.choices[0].message.content
+        else:
+            return "No descriptive summary could be generated."
+
+#  "Ensure that all points are left-aligned and the same font is used for all text. "
 
     def explain_risk_asset_identification(self, code_text: str) -> str:
         """Explain the approach for identifying risk assets, including weightage distribution."""

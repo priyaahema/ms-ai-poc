@@ -85,7 +85,7 @@ def main():
     formatted_approach_explanation_html = html_processor.create_explanation_summary_formatted(title,approach_explanation_html)
     html_content_list.append(formatted_approach_explanation_html)
 
-    csv_processor.create_csv_server_stability(complete_df)
+    # # csv_processor.create_csv_server_stability(complete_df)
 
     # Count of Assets by Category
     logger.info("Summarizing assets by category")
@@ -128,9 +128,9 @@ def main():
     html_content_list.append(maintenance_summary_html)
     
     logger.info("Plotting graphs and charts")
-    # html_content_list = report_plotter.plot_graphs_and_charts()
+    html_content_list = report_plotter.plot_graphs_and_charts()
     
-    # complete_df = data_processor.assign_random_values_for_missing_values(complete_df)
+    # # complete_df = data_processor.assign_random_values_for_missing_values(complete_df)
 
     # Identify high-risk servers
     logger.info("Identifying top 10 high-risk servers by asset count")
@@ -141,9 +141,9 @@ def main():
     # Generate PDF report
     logger.info("Generating PDF report")
     pdf_converter.generate_pdf(html_content_list, "Reports/pdf_report/High Risk Hardware Report.pdf")
-    csv_processor.save_high_risk_servers_with_eol_to_csv(complete_df)
+    # # csv_processor.save_high_risk_servers_with_eol_to_csv(complete_df)
 
-    logger.info("Main execution completed")
+    # logger.info("Main execution completed")
 
     # sender = 'hemuhema2000@gmail.com'
     # recipient = 'hariprasath.viswanathan@cdw.com'

@@ -5,4 +5,4 @@ env_ai_ms/
 __pycache__/
 
 .vscode/
-.env/
+.env

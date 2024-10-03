@@ -167,13 +167,14 @@ class PlotProcessor:
         # Generate image description (assumed to be defined elsewhere)
         description = self.openai_model.generate_image_description(img_data)
         converted_description = HTMLProcessor.convert_markdown_to_html(description)
-
+        
+    
         # Create HTML content with inline CSS
         html_content = f"""
         <div class="plot-container">
             <h3>{filename}</h3>
-            <img src="data:image/png;base64,{img_data}" alt={filename}>
-            <div>{converted_description}</div>
+            <div class="plot-image"><img src="data:image/png;base64,{img_data}  alt={filename}></div>
+            <div class="plot-description">{converted_description}</div>
         </div>
         """
 
@@ -288,12 +289,27 @@ class PDFConverter:
                         position: relative; 
                     }
                     .plot-container {
-                        text-align: center;
-                        margin: 20px;
+                        font-size: 16px;
+                        # background-color: rgb(6, 6, 65);
+                        # color: white;
                     }
-                    img {
-                        width: 600px;
-                        margin: 0 auto;
+                    .plot-image {
+                        display: flex; 
+                        justify-content: center; 
+                        margin-bottom: 15px; 
+                    }
+                    .plot-image img {
+                        max-width: 100%; 
+                        height: auto;
+                    }
+                    .plot-container h3 {
+                        font-size: 20px;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                    }
+                    .plot-description {
+                        text-align: left;
+                        margin-top: 15px; 
                     }
                     table {
                         width: 100%;
@@ -330,6 +346,7 @@ class PDFConverter:
                     .explanation-content {
                         border: 1px solid #ccc;
                         padding: 10px;
+                        font-size: 16px;
                     }
                     .count-assets-table-summary,
                     .usage-summary,
@@ -337,7 +354,7 @@ class PDFConverter:
                     .maintenance-summary {
                         margin-top: 40px;
                         margin-bottom: 20px;
-                        font-size: 18px;
+                        font-size: 16px;
                     }
                     .count-assets-table-title,
                     .usage-table-title,
@@ -345,7 +362,7 @@ class PDFConverter:
                     .maintenance-table-title,
                     .highrisk-asset-table-title {
                         text-align: left;
-                        font-size: 16px;
+                        font-size: 20px;
                         margin-bottom: 10px;
                     }
                     .count-assets-table-content,
@@ -354,32 +371,32 @@ class PDFConverter:
                     .maintenance-table-content {
                         padding: 10px;
                         overflow-x: auto;
+                        font-size: 16px;
                     }
                     .count-assets-table-description,
                     .usage-table-description,
                     .incident-table-description,
-                    .maintenance-table-description,
-                    .highrisk-asset-table-description {
+                    .maintenance-table-description {
                         margin-top: 10px;
                         font-size: 14px;
                         line-height: 1.5;
                     }
                     .highrisk-asset-wrapper {
-                        text-align: center;
                         padding: 20px;
                     }
                     .highrisk-asset-table-title {
                         font-size: 18px;
                         font-weight: bold;
                         margin-bottom: 10px;
+                        text-align: left;
                     }
                     .table-expired-count {
                         margin-bottom: 20px;
                     }
                     .highrisk-asset-table-description {
-                        font-size: 18px;
+                        font-size: 16px;
                         line-height: 1.5;
-                        color: #333;
+                        margin-top: 20px;
                     }
                     .asset-table {
                         margin-left: auto;
@@ -406,18 +423,15 @@ class PDFConverter:
                         color: rgb(6, 6, 65);
                         margin-bottom: 10px;
                     }
-                    .approach-explanation-content {
-                        font-size: 16px;
-                        line-height: 1.5;
-                        color: #333;
-                    }
                     .approach-explanation-content h3 {
                         font-size: 20px;
                         color: rgb(6, 6, 65);
                         margin-top: 15px;
                     }
                     .approach-explanation-content p {
+                      font-size: 16px;
                         margin: 10px 0;
+                        line-height: 2;
                     }
                     .approach-explanation-content ul {
                         margin: 10px 0;
