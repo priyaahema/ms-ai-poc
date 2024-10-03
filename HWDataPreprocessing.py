@@ -65,9 +65,11 @@ def process_data():
 
     # Download files from Azure Blob Storage
     download_dir = 'AssetFiles'
-    
-    # os.makedirs(download_dir, exist_ok=True)
-    
+    score_output_dir = 'AssetFiles_With_Scores'
+
+    os.makedirs(download_dir, exist_ok=True)
+    os.makedirs(score_output_dir, exist_ok=True)
+
     files_to_download = {
         'hw_servers_usage_5.csv': 'hw_usage_data.csv',
         'hw_warranty_5.csv': 'hw_warranty_data.csv',
@@ -126,13 +128,13 @@ def process_data():
     patch_upgrades_analyzer = MaintenanceAnalyzer(patch_upgrades)
     patch_upgrades_analyzer.calculate_overall_maintenance_score()
     maintenance_scores_calculated = patch_upgrades_analyzer.aggregate_by_hardware_asset()
-    csv_processor.save_to_csv(maintenance_scores_calculated , 'AssetFiles_With_Scores/hw_maintenance_scores.csv')
+    # csv_processor.save_to_csv(maintenance_scores_calculated , 'AssetFiles_With_Scores/hw_maintenance_scores.csv')
     upload_dataframe_to_blob(maintenance_scores_calculated,'AssetFiles_With_Scores/hw_maintenance_score.csv')
 
 
     incident_scorer = IncidentScoring(hw_incidents, hw_server,severity_mapping,impact_mapping)
     incident_scores_calculated = incident_scorer.incident_stability()
-    csv_processor.save_to_csv(incident_scores_calculated , 'AssetFiles_With_Scores/hw_incidents_score.csv')
+    # csv_processor.save_to_csv(incident_scores_calculated , 'AssetFiles_With_Scores/hw_incidents_score.csv')
     # # incident_scores_calculated = incident_scorer.incident_df_with_all_scores()
     upload_dataframe_to_blob(incident_scores_calculated,'AssetFiles_With_Scores/hw_incidents_score.csv')
 
@@ -140,14 +142,14 @@ def process_data():
     hw_vulnerability.columns = hw_vulnerability.columns.str.replace('ï»¿', '')
     vulnerability_scorer = VulnerabilityScorer(hw_vulnerability)
     vulnerability_summary = vulnerability_scorer.calculate_vulnerability_stability()
-    csv_processor.save_to_csv(vulnerability_summary, 'AssetFiles_With_Scores/hw_vulnerability_score.csv')
+    # csv_processor.save_to_csv(vulnerability_summary, 'AssetFiles_With_Scores/hw_vulnerability_score.csv')
     upload_dataframe_to_blob(vulnerability_summary,'AssetFiles_With_Scores/hw_vulnerability_score.csv')
 
 
     # Usage scoring
     usage_scorer = UsageScorer()
     weighted_usage_scores = usage_scorer.add_weighted_usage_scores(hw_server_usage)
-    csv_processor.save_to_csv(weighted_usage_scores, 'AssetFiles_With_Scores/hw_usage_score.csv')
+    # csv_processor.save_to_csv(weighted_usage_scores, 'AssetFiles_With_Scores/hw_usage_score.csv')
     upload_dataframe_to_blob(weighted_usage_scores,'AssetFiles_With_Scores/hw_usage_score.csv')
     
     # Merge all individual scores with server data
@@ -178,7 +180,7 @@ def process_data():
     merged_data= data_processor.add_company_names(merged_data_zscore, hw_server)
     
     # Save the final merged data
-    csv_processor.save_to_csv(merged_data, f'Reports/csv_report/summarized_asset_scores_with_risk_category.csv')
+    # csv_processor.save_to_csv(merged_data, f'Reports/csv_report/summarized_asset_scores_with_risk_category.csv')
     upload_dataframe_to_blob(merged_data,'AssetFiles_With_Scores/summarized_asset_scores_with_risk_category.csv')
     # upload_file_to_blob(f'{download_dir}/merged_data.csv', f'{download_dir}/merged_data.csv')
 
