@@ -1,7 +1,7 @@
 import logging
 import azure.functions as func
-from HighRisk_Analysis.Hwdp import DataProcessorClass
-from HighRisk_Analysis.Rg import ReportGeneratorClass
+from HighRisk_Analysis.HWDataPreprocessing import DataProcessorClass
+from HighRisk_Analysis.ReportGenerator import ReportGeneratorClass
 
 app = func.FunctionApp()
 
@@ -24,9 +24,6 @@ def AI_MS_HW_REPORT(myTimer: func.TimerRequest) -> None:
 @app.function_name(name="AI_MS_HTTP_REPORT")
 @app.route(route="generate_report", methods=["GET", "POST"])
 def generate_report(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    HTTP Trigger to generate a report on demand.
-    """
     try:
         logging.info('HTTP request received to generate report...')
         

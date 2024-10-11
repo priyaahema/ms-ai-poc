@@ -12,3 +12,4 @@ azure-storage-blob
 PyPDF2
 matplotlib
 seaborn
+weasyprint

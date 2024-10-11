@@ -8,13 +8,17 @@ import pdfkit
 import io
 from PyPDF2 import PdfReader, PdfWriter
 import logging
+import os
+import weasyprint
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class HTMLProcessor:
 
     def __init__(self) -> None:
-        # Set up logging
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-        self.logger= logging.getLogger(__name__)
+        pass
 
     @staticmethod
     def convert_markdown_to_html(markdown_text: str) -> str:
@@ -151,7 +155,7 @@ class CSVProcessor:
             dt = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
             # Save the concatenated DataFrame to a single CSV file
-            csv_filename = f'Reports/csv_report/High_risk_expiring_and_expired_assets_report_{dt}.csv'
+            csv_filename = f'Reports/csv_report/High_risk_expiring_and_expired_assets_report.csv'
 
             return csv_filename,all_high_risk_servers
             # all_high_risk_servers.to_csv(csv_filename, index=False)
@@ -225,36 +229,308 @@ class PlotProcessor:
 
 
 class PDFConverter:
+    def __init__(self):
+        pass
 
-    @staticmethod
-    def generate_title_page_pdf(logger):
+    # def generate_title_page_pdf(self,logger):
+    #     logger.info("generate_title_page")
+    #     # Create an HTML string for the title page
+    #     title_html = """
+    #     <html>
+    #         <head>
+    #             <title>High Risk Hardware Report</title>
+    #             <style>
+    #                 body {
+    #                     font-family: Arial, sans-serif;
+    #                     font-size: 14px;
+    #                     margin: 0; 
+    #                     padding: 0; 
+    #                     height: 100vh; 
+    #                     position: relative;
+    #                 }
+    #                 .pdf-title {
+    #                     position: absolute; 
+    #                     top: 45%; 
+    #                     left: 20%;
+    #                     text-align: center; 
+    #                     background-color: rgb(6, 6, 65); 
+    #                     color: white; 
+    #                     font-size: 32px; 
+    #                     border-radius: 10px;
+    #                     padding: 20px; 
+    #                     padding-right: 80px;
+    #                     padding-left: 80px;
+    #                 }
+    #             </style>
+    #         </head>
+    #         <body>
+    #             <div class="pdf-title">High Risk Hardware Report</div>
+    #         </body>
+    #     </html>
+    #     """
+
+    #     # Convert the title HTML string to a PDF and capture it as bytes using stdout
+    #     title_pdf_stream = io.BytesIO()
+    #     pdf_bytes = pdfkit.from_string(title_html, False, options={
+    #         'margin-top': '0.50in',
+    #         'margin-right': '0.50in',
+    #         'margin-bottom': '0.50in',
+    #         'margin-left': '0.50in',
+    #         'encoding': 'UTF-8',
+    #         'enable-local-file-access': '',
+    #         'no-outline': None
+    #     },
+    #     configuration = self.config
+    #     )
+
+    #     title_pdf_stream.write(pdf_bytes)
+    #     title_pdf_stream.seek(0)  # Reset stream pointer to start
+    #     return title_pdf_stream
+
+
+
+    # @staticmethod
+    # def generate_content_pdf(html_content_list):
+    #     # Create an HTML string to hold the title page and plots with CSS for font and justification
+    #     html_string = """
+    #     <html>
+    #         <head>
+    #             <title>High Risk Hardware Report</title>
+    #             <style>
+    #                 body {
+    #                     font-family: Arial, sans-serif;
+    #                     font-size: 14px;
+    #                     margin: 0; 
+    #                     padding: 0; 
+    #                     height: 100vh;
+    #                     position: relative; 
+    #                 }
+    #                 .plot-container {
+    #                     font-size: 16px;
+    #                     # background-color: rgb(6, 6, 65);
+    #                     # color: white;
+    #                 }
+    #                 .plot-image {
+    #                     display: flex; 
+    #                     justify-content: center; 
+    #                     margin-bottom: 15px; 
+    #                 }
+    #                 .plot-image img {
+    #                     max-width: 100%; 
+    #                     height: auto;
+    #                 }
+    #                 .plot-container h3 {
+    #                     font-size: 20px;
+    #                     font-weight: bold;
+    #                     margin-bottom: 20px;
+    #                 }
+    #                 .plot-description {
+    #                     text-align: left;
+    #                     margin-top: 15px; 
+    #                 }
+    #                 table {
+    #                     width: 100%;
+    #                     border-collapse: collapse;
+    #                 }
+    #                 th, td {
+    #                     border: 1px solid #ccc;
+    #                     padding: 8px;
+    #                     text-align: left;
+    #                 }
+    #                 th {
+    #                     background-color: rgb(6, 6, 65);
+    #                     color: white;
+    #                 }
+    #                 tr:nth-child(even) {
+    #                     background-color: #f2f2f2;
+    #                 }
+    #                 .summary-container {
+    #                     text-align: center;
+    #                     margin-bottom: 50px;
+    #                 }
+    #                 .summary-title {
+    #                     margin: 20px 0;
+    #                     font-size: 32px;
+    #                     color: #063a65;
+    #                 }
+    #                 .explanation {
+    #                     margin-top: 40px;
+    #                     margin-bottom: 20px;
+    #                 }
+    #                 .explanation-title {
+    #                     text-align: left;
+    #                 }
+    #                 .explanation-content {
+    #                     border: 1px solid #ccc;
+    #                     padding: 10px;
+    #                     font-size: 16px;
+    #                 }
+    #                 .count-assets-table-summary,
+    #                 .usage-summary,
+    #                 .incident-summary,
+    #                 .maintenance-summary {
+    #                     margin-top: 40px;
+    #                     margin-bottom: 20px;
+    #                     font-size: 16px;
+    #                 }
+    #                 .count-assets-table-title,
+    #                 .usage-table-title,
+    #                 .incident-table-title,
+    #                 .maintenance-table-title,
+    #                 .highrisk-asset-table-title {
+    #                     text-align: left;
+    #                     font-size: 20px;
+    #                     margin-bottom: 10px;
+    #                 }
+    #                 .count-assets-table-content,
+    #                 .usage-table-content,
+    #                 .incident-table-content,
+    #                 .maintenance-table-content {
+    #                     padding: 10px;
+    #                     overflow-x: auto;
+    #                     font-size: 16px;
+    #                 }
+    #                 .count-assets-table-description,
+    #                 .usage-table-description,
+    #                 .incident-table-description,
+    #                 .maintenance-table-description {
+    #                     margin-top: 10px;
+    #                     font-size: 14px;
+    #                     line-height: 1.5;
+    #                 }
+    #                 .highrisk-asset-wrapper {
+    #                     padding: 20px;
+    #                 }
+    #                 .highrisk-asset-table-title {
+    #                     font-size: 18px;
+    #                     font-weight: bold;
+    #                     margin-bottom: 10px;
+    #                     text-align: left;
+    #                 }
+    #                 .table-expired-count {
+    #                     margin-bottom: 20px;
+    #                 }
+    #                 .highrisk-asset-table-description {
+    #                     font-size: 16px;
+    #                     line-height: 1.5;
+    #                     margin-top: 20px;
+    #                 }
+    #                 .asset-table {
+    #                     margin-left: auto;
+    #                     margin-right: auto;
+    #                     border-collapse: collapse;
+    #                     width: 100%;
+    #                 }
+    #                 .asset-table th {
+    #                     background-color: #f2f2f2;
+    #                     font-weight: bold;
+    #                     padding: 10px;
+    #                 }
+    #                 .asset-table td {
+    #                     padding: 8px;
+    #                     text-align: center;
+    #                 }
+    #                 .approach-explanation {
+    #                     font-family: Arial, sans-serif;
+    #                     margin: 20px;
+    #                     padding: 15px;
+    #                 }
+    #                 .approach-explanation-title {
+    #                     font-size: 24px;
+    #                     color: rgb(6, 6, 65);
+    #                     margin-bottom: 10px;
+    #                 }
+    #                 .approach-explanation-content h3 {
+    #                     font-size: 20px;
+    #                     color: rgb(6, 6, 65);
+    #                     margin-top: 15px;
+    #                 }
+    #                 .approach-explanation-content p {
+    #                   font-size: 16px;
+    #                     margin: 10px 0;
+    #                     line-height: 2;
+    #                 }
+    #                 .approach-explanation-content ul {
+    #                     margin: 10px 0;
+    #                     padding-left: 20px;
+    #                 }
+    #                 .approach-explanation-content li {
+    #                     margin-bottom: 5px;
+    #                 }
+    #             </style>
+    #         </head>
+    #         <body>
+    #     """
+
+    #     # Iterate through the list and add each content to a new page
+    #     for content in html_content_list:
+    #         html_string += f"<div style='page-break-after: always;'>\n{content}\n</div>\n"
+
+    #     html_string += "</body></html>"
+
+    #     # Convert the HTML string to a PDF and capture it as bytes using stdout
+    #     content_pdf_stream = io.BytesIO()
+    #     pdf_bytes = pdfkit.from_string(html_string, False, options={
+    #         'margin-top': '0.75in',
+    #         'margin-right': '0.75in',
+    #         'margin-bottom': '0.5in',
+    #         'margin-left': '0.75in',
+    #         'encoding': 'UTF-8',
+    #         'enable-local-file-access': '',
+    #         'no-outline': None
+    #     })
+    #     content_pdf_stream.write(pdf_bytes)
+    #     content_pdf_stream.seek(0)  # Reset stream pointer to start
+    #     return content_pdf_stream
+
+    
+    # @staticmethod
+    # def combine_pdfs(pdf_streams, output_filename):
+    #     # Create a PdfWriter to combine the PDFs
+    #     pdf_writer = PdfWriter()
+
+    #     # Loop through each PDF stream and add its pages to the writer
+    #     for pdf_stream in pdf_streams:
+    #         pdf_reader = PdfReader(pdf_stream)
+    #         for page_num in range(len(pdf_reader.pages)):
+    #             pdf_writer.add_page(pdf_reader.pages[page_num])
+
+    #     # Write the combined PDF to a file
+    #     with open(output_filename, 'wb') as output_file:
+    #         pdf_writer.write(output_file)
+    
+        # @staticmethod
+    # def generate_pdf(html_content_list, output_filename):
+    #     title_page_pdf = PDFConverter.generate_title_page_pdf()
+    #     content_pdf = PDFConverter.generate_content_pdf(html_content_list)
+    #     # Combine the PDFs and save the final result
+    #     PDFConverter.combine_pdfs([title_page_pdf, content_pdf],output_filename)
+
+
+    def generate_title_page_pdf(self, logger): 
         logger.info("generate_title_page")
+
         # Create an HTML string for the title page
         title_html = """
         <html>
             <head>
                 <title>High Risk Hardware Report</title>
-                <style>
+                 <style>
                     body {
                         font-family: Arial, sans-serif;
                         font-size: 14px;
                         margin: 0; 
                         padding: 0; 
-                        height: 100vh; 
                         position: relative;
                     }
                     .pdf-title {
-                        position: absolute; 
-                        top: 45%; 
-                        left: 20%;
-                        text-align: center; 
-                        background-color: rgb(6, 6, 65); 
-                        color: white; 
-                        font-size: 32px; 
+                        background-color: rgb(6, 6, 65);
+                        text-align: center;
+                        margin-top: 300px;
+                        padding: 50px;
                         border-radius: 10px;
-                        padding: 20px; 
-                        padding-right: 80px;
-                        padding-left: 80px;
+                        color: white;
+                        font-size: 24px;
                     }
                 </style>
             </head>
@@ -264,53 +540,34 @@ class PDFConverter:
         </html>
         """
 
-        # Convert the title HTML string to a PDF and capture it as bytes using stdout
-        # title_pdf_stream = io.BytesIO()
-        # pdf_bytes = pdfkit.from_string(title_html, False, options={
-        #     'margin-top': '0.50in',
-        #     'margin-right': '0.50in',
-        #     'margin-bottom': '0.50in',
-        #     'margin-left': '0.50in',
-        #     'encoding': 'UTF-8',
-        #     'enable-local-file-access': '',
-        #     'no-outline': None
-        # })
+        # Convert the title HTML string to a PDF and capture it as bytes using WeasyPrint
+        title_pdf_stream = io.BytesIO()
+        
+        # WeasyPrint's 'HTML' object can convert HTML to PDF directly
+        pdf = weasyprint.HTML(string=title_html).write_pdf()
+        
+        # Write the PDF data to the BytesIO stream
+        title_pdf_stream.write(pdf)
+        title_pdf_stream.seek(0)  # Reset stream pointer to start
 
-        # title_pdf_stream.write(pdf_bytes)
-        # title_pdf_stream.seek(0)  # Reset stream pointer to start
-        return "title_pdf_stream"
+        return title_pdf_stream
 
-
-
-    @staticmethod
-    def generate_content_pdf(html_content_list):
+    def generate_content_pdf(self,html_content_list):
         # Create an HTML string to hold the title page and plots with CSS for font and justification
         html_string = """
         <html>
             <head>
                 <title>High Risk Hardware Report</title>
-                <style>
+            <style>
                     body {
                         font-family: Arial, sans-serif;
                         font-size: 14px;
                         margin: 0; 
                         padding: 0; 
-                        height: 100vh;
                         position: relative; 
                     }
                     .plot-container {
-                        font-size: 16px;
-                        # background-color: rgb(6, 6, 65);
-                        # color: white;
-                    }
-                    .plot-image {
-                        display: flex; 
-                        justify-content: center; 
-                        margin-bottom: 15px; 
-                    }
-                    .plot-image img {
-                        max-width: 100%; 
-                        height: auto;
+                        font-size: 14px;
                     }
                     .plot-container h3 {
                         font-size: 20px;
@@ -320,6 +577,10 @@ class PDFConverter:
                     .plot-description {
                         text-align: left;
                         margin-top: 15px; 
+                    }
+                    img {
+                        width: 600px;
+                        margin: 0 auto;
                     }
                     table {
                         width: 100%;
@@ -356,7 +617,7 @@ class PDFConverter:
                     .explanation-content {
                         border: 1px solid #ccc;
                         padding: 10px;
-                        font-size: 16px;
+                        font-size: 14px;
                     }
                     .count-assets-table-summary,
                     .usage-summary,
@@ -380,8 +641,7 @@ class PDFConverter:
                     .incident-table-content,
                     .maintenance-table-content {
                         padding: 10px;
-                        overflow-x: auto;
-                        font-size: 16px;
+                        font-size: 14px;
                     }
                     .count-assets-table-description,
                     .usage-table-description,
@@ -434,12 +694,12 @@ class PDFConverter:
                         margin-bottom: 10px;
                     }
                     .approach-explanation-content h3 {
-                        font-size: 20px;
+                        font-size: 18px;
                         color: rgb(6, 6, 65);
                         margin-top: 15px;
                     }
                     .approach-explanation-content p {
-                      font-size: 16px;
+                      font-size: 14px;
                         margin: 10px 0;
                         line-height: 2;
                     }
@@ -450,7 +710,7 @@ class PDFConverter:
                     .approach-explanation-content li {
                         margin-bottom: 5px;
                     }
-                </style>
+            </style>
             </head>
             <body>
         """
@@ -461,62 +721,36 @@ class PDFConverter:
 
         html_string += "</body></html>"
 
-        # Convert the HTML string to a PDF and capture it as bytes using stdout
-        content_pdf_stream = io.BytesIO()
-        pdf_bytes = pdfkit.from_string(html_string, False, options={
-            'margin-top': '0.75in',
-            'margin-right': '0.75in',
-            'margin-bottom': '0.5in',
-            'margin-left': '0.75in',
-            'encoding': 'UTF-8',
-            'enable-local-file-access': '',
-            'no-outline': None
-        })
-        content_pdf_stream.write(pdf_bytes)
-        content_pdf_stream.seek(0)  # Reset stream pointer to start
-        return content_pdf_stream
+               # Convert the title HTML string to a PDF and capture it as bytes using WeasyPrint
+        title_pdf_stream = io.BytesIO()
+        
+        # WeasyPrint's 'HTML' object can convert HTML to PDF directly
+        pdf = weasyprint.HTML(string=html_string).write_pdf()
+        
+        # Write the PDF data to the BytesIO stream
+        title_pdf_stream.write(pdf)
+        title_pdf_stream.seek(0)  # Reset stream pointer to start
+
+        return title_pdf_stream
 
     
-    # @staticmethod
-    # def combine_pdfs(pdf_streams, output_filename):
-    #     # Create a PdfWriter to combine the PDFs
-    #     pdf_writer = PdfWriter()
-
-    #     # Loop through each PDF stream and add its pages to the writer
-    #     for pdf_stream in pdf_streams:
-    #         pdf_reader = PdfReader(pdf_stream)
-    #         for page_num in range(len(pdf_reader.pages)):
-    #             pdf_writer.add_page(pdf_reader.pages[page_num])
-
-    #     # Write the combined PDF to a file
-    #     with open(output_filename, 'wb') as output_file:
-    #         pdf_writer.write(output_file)
-    
-        # @staticmethod
-    # def generate_pdf(html_content_list, output_filename):
-    #     title_page_pdf = PDFConverter.generate_title_page_pdf()
-    #     content_pdf = PDFConverter.generate_content_pdf(html_content_list)
-    #     # Combine the PDFs and save the final result
-    #     PDFConverter.combine_pdfs([title_page_pdf, content_pdf],output_filename)
-
-
-
-    @staticmethod
-    def upload_pdf_to_blob(self,pdf_stream, container_client, blob_name,logger):
+    def upload_pdf_to_blob(self, pdf_stream, container_client, blob_name, logger):
         """
         Uploads a PDF file from a BytesIO stream to Azure Blob Storage.
         """
         try:
             logger.info(f"Entering the uploading function ")
             # Upload the in-memory PDF stream to Azure Blob Storage
-            container_client.upload_blob(pdf_stream, blob_type="BlockBlob", overwrite=True)
-            
-            self.logger.info(f"Successfully uploaded PDF to Azure Blob: {blob_name}")
+            container_client.upload_blob(
+                blob_name,  # 'name' argument is passed here
+                data=pdf_stream,  # PDF stream as 'data'
+                overwrite=True     # 'overwrite' flag if you want to replace the blob if it exists
+            )
+            logger.info(f"Successfully uploaded PDF to Azure Blob: {blob_name}")
         except Exception as e:
-            self.logger.error(f"Error uploading PDF to Blob Storage: {e}")
+            logger.error(f"Error uploading PDF to Blob Storage: {e}")
             raise
 
-    @staticmethod
     def combine_pdfs(self,pdf_streams):
         """
         Combine PDF streams and return the result as a BytesIO object.
@@ -530,7 +764,7 @@ class PDFConverter:
             for page_num in range(len(pdf_reader.pages)):
                 pdf_writer.add_page(pdf_reader.pages[page_num])
         
-        self.logger.info("pdf steams")
+        logger.info("pdf steams")
 
         # Create a BytesIO buffer to hold the combined PDF in memory
         output_stream = io.BytesIO()
@@ -542,17 +776,16 @@ class PDFConverter:
 
         return output_stream       
 
-    @staticmethod
     def generate_pdf(self,logger,html_content_list, container_client , blob_name):
         """
         Generate PDFs for title and content, combine them, and upload to Azure Blob Storage.
         """
         # Generate PDFs for the title and content in memory
         title_page_pdf = self.generate_title_page_pdf(logger)
-        # content_pdf = PDFConverter.generate_content_pdf(html_content_list)
+        content_pdf =  self.generate_content_pdf(html_content_list)
 
         # Combine the PDFs in memory
-        # combined_pdf_stream = PDFConverter.combine_pdfs([title_page_pdf, content_pdf])
-        # logger.info("pdf combined")
-        # # Upload the combined PDF to Azure Blob Storage
-        # PDFConverter.upload_pdf_to_blob(combined_pdf_stream, container_client,blob_name,logger)
+        combined_pdf_stream = self.combine_pdfs([title_page_pdf, content_pdf])
+        logger.info("pdf combined")
+        # Upload the combined PDF to Azure Blob Storage
+        self.upload_pdf_to_blob(combined_pdf_stream, container_client,blob_name,logger)
