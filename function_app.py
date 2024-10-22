@@ -5,8 +5,7 @@ from HighRisk_Analysis.ReportGenerator import ReportGeneratorClass
 
 app = func.FunctionApp()
 
-@app.schedule(schedule="0 9 * * 1", arg_name="myTimer", run_on_startup=True,
-              use_monitor=False) 
+@app.schedule(schedule="0 9 * * 1", arg_name="myTimer", run_on_startup=True,use_monitor=False) 
 def AI_MS_HW_REPORT(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
@@ -33,9 +32,9 @@ def generate_report(req: func.HttpRequest) -> func.HttpResponse:
         logging.info('Data Processing Executed....')
 
         # Execute report generation
-        report_generator = ReportGeneratorClass()
-        report_generator.main()
-        logging.info('Report Generation Executed...')
+        # report_generator = ReportGeneratorClass()
+        # report_generator.main()
+        # logging.info('Report Generation Executed...')
 
         return func.HttpResponse("Report generation completed successfully.", status_code=200)
     

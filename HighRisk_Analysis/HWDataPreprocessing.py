@@ -14,12 +14,16 @@ from src.data_processor.data_loader import DataLoader
 from src.data_analysis.usage_scorer import UsageScorer
 from src.data_processor.data_processor import DataProcessor
 from src.metrics import MetricsCalculator, RiskCategorizer
-from src.utils.report_generator import CSVProcessor 
 from src.data_analysis.vulnerability_scorer import VulnerabilityScorer
 from src.data_analysis.incident_scorer import IncidentScoring      
 from src.data_analysis.maintenance_scorer import MaintenanceAnalyzer
 from src.utils.blob import BlobStorageManager
+from src.app_constants.constants import (weights_composite_stability_score,severity_mapping,impact_mapping,
+                                        source_folder_name,target_folder_name,csv_report_asset_with_risk_file_location,
+                                        code_string_file_name
+                                        )
 from dotenv import load_dotenv
+import inspect
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -37,132 +41,81 @@ class DataProcessorClass:
         # Initialize Azure Blob service client
         self.blob_service_client = BlobServiceClient.from_connection_string(self.AZURE_STORAGE_CONNECTION_STRING)
         self.container_client = self.blob_service_client.get_container_client(self.BLOB_CONTAINER_NAME)
-    
-    def upload_blob(self, data, blob_path):
-        """Upload data to Azure Blob Storage"""
-        blob_client = self.blob_service_client.get_blob_client(container=self.BLOB_CONTAINER_NAME, blob=blob_path)
-        blob_client.upload_blob(data, blob_type="BlockBlob", overwrite=True)
-    
-    def upload_dataframe_to_blob(self, df, blob_path):
-        """Upload DataFrame to Azure Blob Storage as CSV"""
-        csv_buffer = io.BytesIO()
-        df.to_csv(csv_buffer, index=False)
-        csv_buffer.seek(0)
-        self.upload_blob(csv_buffer, blob_path)
+        self.blob_storage_manager = BlobStorageManager()
 
-    def download_blob_to_file(self, blob_name, download_file_path):
-        """Downloads a blob from Azure Blob Storage to a local file"""
-        blob_client = self.container_client.get_blob_client(blob_name)
-        with open(download_file_path, "wb") as download_file:
-            download_file.write(blob_client.download_blob().readall())
-        logger.info(f"Downloaded {blob_name} to {download_file_path}")
+        self.source_folder_name = source_folder_name
+        self.weights_composite_stability_score = weights_composite_stability_score
+        self.severity_mapping = severity_mapping
+        self.impact_mapping= impact_mapping
 
-    def load_from_blob(self, folder_name, blob_name):
-        """
-        Loads a CSV file directly from Azure Blob Storage into a pandas DataFrame.
-        """
-        logger.info(f"Attempting to read blob: {blob_name}")
+        self.data_processor = DataProcessor()
+        self.metrics_calculator = MetricsCalculator()
+        self.risk_categorizer = RiskCategorizer()
 
-        # URL encode the blob name
-        encoded_blob_name = urllib.parse.quote(blob_name)
-        logger.info(f"Encoded blob name: {encoded_blob_name}")
+    # Function to capture function source code
+    def get_function_code(self,func):
+        return inspect.getsource(func)
 
-        blob_client = self.container_client.get_blob_client(f"{folder_name}/{encoded_blob_name}")
-        
-        try:
-            # Download the blob content
-            download_stream = blob_client.download_blob().readall()
+    def get_code_as_string(self,patch_upgrades_analyzer,incident_scorer,vulnerability_scorer,usage_scorer):
 
-            # Decode the content using a different encoding if UTF-8 fails (try 'ISO-8859-1' or 'Windows-1252')
-            decoded_content = download_stream.decode('ISO-8859-1')
+        complete_code_string = ""
+        complete_code_string += self.get_function_code(self.process_data) + "\n"
+        complete_code_string += self.get_function_code(patch_upgrades_analyzer.calculate_overall_maintenance_score) + "\n"
+        complete_code_string += self.get_function_code(patch_upgrades_analyzer.aggregate_by_hardware_asset) + "\n"
+        complete_code_string += self.get_function_code(incident_scorer.incident_stability) + "\n"
+        complete_code_string += self.get_function_code(vulnerability_scorer.calculate_vulnerability_stability) + "\n"
+        complete_code_string += self.get_function_code(usage_scorer.add_weighted_usage_scores) + "\n"
+        complete_code_string += self.get_function_code(self.metrics_calculator.calculate_stability_scores) + "\n"
+        complete_code_string += self.get_function_code(self.risk_categorizer.categorize_asset_risk)
 
-            # Use io.StringIO to read the CSV content into a pandas DataFrame
-            df = pd.read_csv(io.StringIO(decoded_content))
-            logger.info(df)
-            logger.info(f"Successfully downloaded {blob_name}")
-            return df
-        except Exception as e:
-            logger.error(f"Error downloading blob {blob_name}: {e}")
-            raise
+        return complete_code_string
   
-
     def process_data(self):
 
         logger.info("Starting data processing")
-
-        weights_composite_stability_score = {
-            'overall_usage_score': 0.2,
-            'overall_incident_score': 0.5,
-            'maintenance_score': 0.3,
-            'vulnerability_score': 0.5
-        }
         
-        severity_mapping = {
-            '1 - high': 10, 'high': 10,
-            '2 - medium': 4, 'medium': 4,
-            '3 - low': 0.5, 'low': 0.5
-        }
-        impact_mapping = {
-            '1 - high': 10, 'high': 10,
-            '2 - medium': 4, 'medium': 4,
-            '3 - low': 0.5, 'low': 0.5
-        }
-
-        # Azure Blob Storage setup
-        folder_name = 'AssetFiles'
-        
-        # Load datasets directly from Blob Storage (using streams)
-        logger.info("Processing datasets")
-
-        data_loader = DataLoader()
-        data_processor = DataProcessor()
-        metrics_calculator = MetricsCalculator()
-        risk_categorizer = RiskCategorizer()
-        csv_processor = CSVProcessor()
-        blob_storage_manager = BlobStorageManager()
-
         # Create list to store dataframes loaded from blob
-        hw_server_usage = self.load_from_blob(folder_name, 'hw_servers_usage_5.csv')
+        hw_server_usage = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'hw_servers_usage_5.csv')
         logger.info("hw_server_usage loaded")
 
-        patch_upgrades = self.load_from_blob(folder_name, 'patchupgrades.csv')
+        patch_upgrades = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'patchupgrades.csv')
         logger.info("patch_upgrades loaded")
 
-        hw_warrant = self.load_from_blob(folder_name, 'hw_warranty_5.csv')
+        hw_warrant = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'hw_warranty_5.csv')
         logger.info("hw_warrant loaded")
 
-        hw_server = self.load_from_blob(folder_name, 'hw_servers_5.csv')
+        hw_server = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'hw_servers_5.csv')
         logger.info("hw_server loaded")
 
-        hw_vulnerability = self.load_from_blob(folder_name, 'hw_vulnerabilities_data.csv')
+        hw_vulnerability = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'hw_vulnerabilities_data.csv')
         logger.info("hw_vulnerability loaded")
 
-        hw_incidents = self.load_from_blob(folder_name, 'hw_incidents_5.csv')
+        hw_incidents = self.blob_storage_manager.load_from_blob(self.source_folder_name, 'hw_incidents_5.csv')
         logger.info("hw_incidents loaded")
 
         # Calculate and save individual scores for incidents, usage, vulnerabilities, etc.
         patch_upgrades_analyzer = MaintenanceAnalyzer(patch_upgrades)
         patch_upgrades_analyzer.calculate_overall_maintenance_score()
         maintenance_scores_calculated = patch_upgrades_analyzer.aggregate_by_hardware_asset()
-        blob_storage_manager.upload_dataframe_to_blob(maintenance_scores_calculated, 'AssetFiles_With_Scores/hw_maintenance_score.csv')
+        self.blob_storage_manager.upload_dataframe_to_blob(maintenance_scores_calculated, f'{target_folder_name}/hw_maintenance_score.csv')
 
-        incident_scorer = IncidentScoring(hw_incidents, hw_server, severity_mapping , impact_mapping)
+        incident_scorer = IncidentScoring(hw_incidents, hw_server, self.severity_mapping , self.impact_mapping)
         incident_scores_calculated = incident_scorer.incident_stability()
-        blob_storage_manager.upload_dataframe_to_blob(incident_scores_calculated, 'AssetFiles_With_Scores/hw_incidents_score.csv')
+        self.blob_storage_manager.upload_dataframe_to_blob(incident_scores_calculated, f'{target_folder_name}/hw_incidents_score.csv')
 
         hw_vulnerability.columns = hw_vulnerability.columns.str.replace('ï»¿', '')
         vulnerability_scorer = VulnerabilityScorer(hw_vulnerability)
         vulnerability_summary = vulnerability_scorer.calculate_vulnerability_stability()
-        blob_storage_manager.upload_dataframe_to_blob(vulnerability_summary, 'AssetFiles_With_Scores/hw_vulnerability_score.csv')
+        self.blob_storage_manager.upload_dataframe_to_blob(vulnerability_summary, f'{target_folder_name}/hw_vulnerability_score.csv')
 
         # Usage scoring
         usage_scorer = UsageScorer()
         weighted_usage_scores = usage_scorer.add_weighted_usage_scores(hw_server_usage)
-        blob_storage_manager.upload_dataframe_to_blob(weighted_usage_scores, 'AssetFiles_With_Scores/hw_usage_score.csv')
+        self.blob_storage_manager.upload_dataframe_to_blob(weighted_usage_scores, f'{target_folder_name}/hw_usage_score.csv')
 
         # Merge all individual scores with server data
         logger.info("Merging datasets")
-        merged_data = data_processor.merge_data(
+        merged_data = self.data_processor.merge_data(
             hw_server,
             weighted_usage_scores,
             incident_scores_calculated,
@@ -173,27 +126,30 @@ class DataProcessorClass:
 
         # Handle missing values
         logger.info("Handling missing values")
-        merged_data = data_processor.handle_missing_values(merged_data)
+        merged_data = self.data_processor.handle_missing_values(merged_data)
 
         # Calculate stability scores
         logger.info("Calculating stability scores")
-        merged_data = metrics_calculator.calculate_stability_scores(merged_data, weights_composite_stability_score)
+        merged_data = self.metrics_calculator.calculate_stability_scores(merged_data, self.weights_composite_stability_score)
 
         # Calculate risk categorization
         logger.info("Categorizing asset risk")
-        merged_data_zscore = risk_categorizer.categorize_asset_risk(merged_data)
+        merged_data_zscore = self.risk_categorizer.categorize_asset_risk(merged_data)
 
         # Add company names
-        merged_data = data_processor.add_company_names(merged_data_zscore, hw_server)
+        merged_data = self.data_processor.add_company_names(merged_data_zscore, hw_server)
 
         # Save the final merged data
-        blob_storage_manager.upload_dataframe_to_blob(merged_data, 'Reports/csv_report/summarized_asset_scores_with_risk_category.csv')
-
+        self.blob_storage_manager.upload_dataframe_to_blob(merged_data, csv_report_asset_with_risk_file_location)
+        
+        return patch_upgrades_analyzer,incident_scorer,vulnerability_scorer,usage_scorer
+      
     def main(self):
         logger.info("Starting data processing via the class.")
-
         try:
-            self.process_data()
+            patch_upgrades_analyzer,incident_scorer,vulnerability_scorer,usage_scorer = self.process_data()
+            complete_code_string = self.get_code_as_string(patch_upgrades_analyzer,incident_scorer,vulnerability_scorer,usage_scorer)
+            self.blob_storage_manager.upload_blob(complete_code_string, code_string_file_name)
             return {
                 'statusCode': 200,
                 'body': 'Data processing completed successfully.'

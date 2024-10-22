@@ -625,7 +625,6 @@ class PDFConverter:
                     .maintenance-summary {
                         margin-top: 40px;
                         margin-bottom: 20px;
-                        font-size: 16px;
                     }
                     .count-assets-table-title,
                     .usage-table-title,

@@ -9,15 +9,15 @@ from azure.storage.blob import BlobServiceClient
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.append(project_root)
 
-from src.metrics import MetricsCalculator,RiskCategorizer
+from src.metrics import MetricsCalculator
 from src.utils.report_generator import HTMLProcessor,CSVProcessor,PlotProcessor,PDFConverter
-from src.source_code import code_text
+# from src.source_code import code_text
 from src.utils.model import OpenAIModel
 from src.data_analysis.visualizations import ReportPlotter
 from src.utils.email_sender import EmailSender
 from src.utils.blob import BlobStorageManager
 from dotenv import load_dotenv
-
+from src.app_constants.constants import pdf_report_file_location,code_string_file_name
 
 # Load environment variables
 load_dotenv()
@@ -66,28 +66,12 @@ class ReportGeneratorClass:
         self.blob_service_client = BlobServiceClient.from_connection_string(self.AZURE_STORAGE_CONNECTION_STRING)
         self.container_client = self.blob_service_client.get_container_client(self.BLOB_CONTAINER_NAME)
 
-
-    def load_csv_from_blob(self,container_client,folder_name, blob_name):
-        """
-        Load the CSV file directly from Azure Blob Storage into a pandas DataFrame.
-        """
-        try:
-            blob_client = container_client.get_blob_client(f"{folder_name}/{blob_name}")
-            csv_data = blob_client.download_blob().readall()
-            # Convert byte content into a DataFrame
-            df = pd.read_csv(io.BytesIO(csv_data))
-            logger.info(f"Successfully loaded {blob_name} from container {self.BLOB_CONTAINER_NAME} into memory")
-            return df
-        except Exception as e:
-            logger.error(f"Failed to load {blob_name} from blob storage: {str(e)}")
-            raise
-
     def main(self):
         logger.info("Starting AI model and report generation step")
 
         # Load the CSV directly into memory from Blob Storage
         logger.info("Loading aggregated_calculated_scores.csv from Blob Storage into memory")
-        complete_df = self.load_csv_from_blob(self.container_client,self.folder_name,self.blob_name)
+        complete_df = self.blob_storage_manager.load_csv_from_blob(self.container_client,self.folder_name,self.blob_name)
         
         # Generate reports
         logger.info("Generating reports")
@@ -96,6 +80,7 @@ class ReportGeneratorClass:
 
         # List all data files
         title = "The Approach to Identify the Risk Assets"
+        code_text = self.blob_storage_manager.load_string_from_blob(self.blob_service_client , self.BLOB_CONTAINER_NAME,code_string_file_name)
         approach_explanation = self.openai_model.explain_risk_asset_identification(code_text)
         approach_explanation_html = self.html_processor.convert_markdown_to_html(approach_explanation)
         formatted_approach_explanation_html = self.html_processor.create_explanation_summary_formatted(title,approach_explanation_html)
@@ -152,7 +137,7 @@ class ReportGeneratorClass:
         
         # Generate PDF report
         logger.info("Generating PDF report")
-        self.pdf_converter.generate_pdf(logger,html_content_list, self.container_client ,"Reports/pdf_report/High Risk Hardware Report.pdf")
+        self.pdf_converter.generate_pdf(logger,html_content_list, self.container_client ,pdf_report_file_location)
         
         csv_filename,all_high_risk_servers = self.csv_processor.save_high_risk_servers_with_eol_to_csv(complete_df)
         self.blob_storage_manager.upload_dataframe_to_blob(all_high_risk_servers,csv_filename)

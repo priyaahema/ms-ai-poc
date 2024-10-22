@@ -31,6 +31,7 @@ class BlobStorageManager:
         except Exception as e:
             logger.error(f"Failed to upload blob {blob_path}: {e}")
             raise
+    
 
     def upload_dataframe_to_blob(self, df, blob_path):
         """Upload DataFrame to Azure Blob Storage as CSV"""
@@ -69,7 +70,6 @@ class BlobStorageManager:
         try:
             # Download the blob content
             download_stream = blob_client.download_blob().readall()
-
             # Decode the content (using 'ISO-8859-1' encoding as fallback)
             decoded_content = download_stream.decode('ISO-8859-1')
 
@@ -80,3 +80,30 @@ class BlobStorageManager:
         except Exception as e:
             logger.error(f"Error downloading blob {blob_name}: {e}")
             raise
+
+    def load_csv_from_blob(self,container_client,folder_name, blob_name):
+        """
+        Load the CSV file directly from Azure Blob Storage into a pandas DataFrame.
+        """
+        try:
+            blob_client = container_client.get_blob_client(f"{folder_name}/{blob_name}")
+            csv_data = blob_client.download_blob().readall()
+            # Convert byte content into a DataFrame
+            df = pd.read_csv(io.BytesIO(csv_data))
+            logger.info(f"Successfully loaded {blob_name} from container {self.BLOB_CONTAINER_NAME} into memory")
+            return df
+        except Exception as e:
+            logger.error(f"Failed to load {blob_name} from blob storage: {str(e)}")
+            raise
+
+    def load_string_from_blob(self,blob_service_client, container_name,blob_path):
+    
+        # Get a client to interact with the specific blob
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+
+        # Download the blob content as a string
+        download_stream = blob_client.download_blob()
+        downloaded_text = download_stream.readall().decode('utf-8')  # Decoding to ensure it's a string
+
+        return downloaded_text
+    
