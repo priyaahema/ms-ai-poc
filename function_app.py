@@ -32,11 +32,11 @@ def generate_report(req: func.HttpRequest) -> func.HttpResponse:
         logging.info('Data Processing Executed....')
 
         # Execute report generation
-        # report_generator = ReportGeneratorClass()
-        # report_generator.main()
-        # logging.info('Report Generation Executed...')
+        report_generator = ReportGeneratorClass()
+        report_generator.main()
+        logging.info('Report Generation Executed...')
 
-        return func.HttpResponse("Report generation completed successfully.", status_code=200)
+        return func.HttpResponse("Data Processing and Report generation completed successfully.", status_code=200)
     
     except Exception as e:
         logging.error(f"Error generating report: {str(e)}")
