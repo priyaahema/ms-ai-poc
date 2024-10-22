@@ -5,7 +5,7 @@ from HighRisk_Analysis.ReportGenerator import ReportGeneratorClass
 
 app = func.FunctionApp()
 
-@app.schedule(schedule="0 9 * * 1", arg_name="myTimer", run_on_startup=True,use_monitor=False) 
+@app.schedule(schedule="0 9 * * 1", arg_name="myTimer", run_on_startup=False,use_monitor=False) 
 def AI_MS_HW_REPORT(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('The timer is past due!')
@@ -21,7 +21,7 @@ def AI_MS_HW_REPORT(myTimer: func.TimerRequest) -> None:
 
 # HTTP Trigger Function
 @app.function_name(name="AI_MS_HTTP_REPORT")
-@app.route(route="generate_report", methods=["GET", "POST"])
+@app.route(route="generate_report", methods=["GET"])
 def generate_report(req: func.HttpRequest) -> func.HttpResponse:
     try:
         logging.info('HTTP request received to generate report...')
