@@ -34,20 +34,12 @@ logger = logging.getLogger(__name__)
 
 class DataProcessorClass:
     def __init__(self):
-        # Initialize Azure Blob storage clients
-        self.AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
-        self.BLOB_CONTAINER_NAME = os.getenv('BLOB_CONTAINER_NAME')
-
-        # Initialize Azure Blob service client
-        self.blob_service_client = BlobServiceClient.from_connection_string(self.AZURE_STORAGE_CONNECTION_STRING)
-        self.container_client = self.blob_service_client.get_container_client(self.BLOB_CONTAINER_NAME)
-        self.blob_storage_manager = BlobStorageManager()
-
         self.source_folder_name = source_folder_name
         self.weights_composite_stability_score = weights_composite_stability_score
         self.severity_mapping = severity_mapping
         self.impact_mapping= impact_mapping
-
+        
+        self.blob_storage_manager = BlobStorageManager()
         self.data_processor = DataProcessor()
         self.metrics_calculator = MetricsCalculator()
         self.risk_categorizer = RiskCategorizer()
